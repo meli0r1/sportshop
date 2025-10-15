@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Каталог — SportShop{% endblock %}
+
+{% block content %}
+    <h1>Каталог спортивной одежды</h1>
+
+    <div class="product-grid">
+        {% for product in products %}
+            <div class="product-card">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% else %}
+                    <div class="placeholder-img">Нет фото</div>
+                {% endif %}
+                <h3>{{ product.name }}</h3>
+                <p class="price">{{ product.price }} ₽</p>
+                <a href="{% url 'product_detail' product.id %}" class="btn">Подробнее</a>
+            </div>
+        {% empty %}
+            <p>Товары скоро появятся!</p>
+        {% endfor %}
+    </div>
+{% endblock %}

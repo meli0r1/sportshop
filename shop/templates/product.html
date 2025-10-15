@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} — SportShop{% endblock %}
+
+{% block content %}
+    <div class="product-detail">
+        <div class="product-image">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+                <div class="placeholder-img" style="width:300px; height:300px; display:flex; align-items:center; justify-content:center;">Нет фото</div>
+            {% endif %}
+        </div>
+        <div class="product-info">
+            <h1>{{ product.name }}</h1>
+            <p class="price">{{ product.price }} ₽</p>
+            <p>{{ product.description|default:"Описание отсутствует." }}</p>
+            <form method="post" action="{% url 'add_to_cart' product.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-add">Добавить в корзину</button>
+            </form>
+            <a href="{% url 'catalog' %}" class="btn btn-back">← Назад к каталогу</a>
+        </div>
+    </div>
+{% endblock %}

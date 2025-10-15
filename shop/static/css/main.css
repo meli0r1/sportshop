@@ -1,0 +1,504 @@
+/* === СБРОС И ГЛОБАЛЬНЫЕ СТИЛИ === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --neon-blue: #00f0ff;
+    --neon-pink: #ff00c8;
+    --dark-bg: #0f0f1b;
+    --card-bg: rgba(20, 20, 40, 0.6);
+    --text: #f0f0ff;
+}
+
+body {
+    background: var(--dark-bg);
+    color: var(--text);
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* === АНИМИРОВАННЫЙ ФОН === */
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: float 15s infinite ease-in-out;
+}
+
+.blob:nth-child(1) {
+    width: 400px;
+    height: 400px;
+    background: var(--neon-blue);
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.blob:nth-child(2) {
+    width: 300px;
+    height: 300px;
+    background: var(--neon-pink);
+    bottom: 10%;
+    right: 10%;
+    animation-delay: -5s;
+}
+
+.blob:nth-child(3) {
+    width: 250px;
+    height: 250px;
+    background: rgba(0, 240, 255, 0.5);
+    top: 50%;
+    left: 50%;
+    animation-delay: -10s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(20px, 30px) scale(1.05); }
+    50% { transform: translate(-20px, 20px) scale(0.95); }
+    75% { transform: translate(10px, -30px) scale(1.03); }
+}
+
+/* === КОНТЕНТ === */
+.content-wrapper {
+    position: relative;
+    z-index: 10;
+}
+
+header {
+    text-align: center;
+    padding: 30px 0;
+    background: rgba(10, 10, 25, 0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+header h1 {
+    font-size: 2.8em;
+    background: linear-gradient(to right, var(--neon-blue), var(--neon-pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    padding: 20px 0;
+    background: rgba(15, 15, 30, 0.8);
+    backdrop-filter: blur(8px);
+}
+
+nav a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1em;
+    padding: 8px 16px;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+nav a:hover {
+    color: var(--neon-blue);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+    transform: translateY(-3px);
+}
+
+nav a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.4), transparent);
+    transition: 0.5s;
+}
+
+nav a:hover::before {
+    left: 100%;
+}
+
+.cart-link {
+    background: rgba(255, 0, 200, 0.2);
+    border: 1px solid var(--neon-pink);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 30px;
+    background: linear-gradient(to right, var(--neon-blue), #ffffff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+/* === АЛЕРТЫ === */
+.alert {
+    background: rgba(0, 240, 255, 0.15);
+    border-left: 3px solid var(--neon-blue);
+    padding: 12px;
+    margin: 20px auto;
+    max-width: 600px;
+    border-radius: 8px;
+    text-align: center;
+    animation: fadeIn 0.5s;
+}
+
+/* === КАРУСЕЛЬ === */
+.carousel-container {
+    position: relative;
+    max-width: 1000px;
+    margin: 40px auto;
+    overflow: hidden;
+    border-radius: 20px;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.carousel {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.carousel-item {
+    min-width: 280px;
+    flex: 0 0 auto;
+    padding: 25px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+
+.carousel-item:hover {
+    transform: scale(1.05);
+}
+
+.carousel-item img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 16px;
+    transition: all 0.4s;
+}
+
+.carousel-item img:hover {
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+}
+
+.carousel-item h3 {
+    font-size: 1.3em;
+    margin: 12px 0 8px;
+    color: white;
+}
+
+.carousel-item p {
+    font-size: 1.2em;
+    font-weight: bold;
+    background: linear-gradient(to right, var(--neon-blue), var(--neon-pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: 2px solid var(--neon-blue);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.carousel-btn:hover {
+    background: rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+    color: var(--neon-blue);
+}
+
+.carousel-btn--prev { left: 20px; }
+.carousel-btn--next { right: 20px; }
+
+/* === КАРТОЧКИ ТОВАРОВ === */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.product-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.4s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--neon-blue);
+    box-shadow: 0 10px 25px rgba(0, 240, 255, 0.3);
+}
+
+.product-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 16px;
+    margin-bottom: 16px;
+}
+
+.price {
+    font-size: 1.4em;
+    font-weight: bold;
+    background: linear-gradient(to right, var(--neon-blue), #ffffff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin: 12px 0;
+}
+
+.btn {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 25px;
+    background: transparent;
+    color: var(--neon-blue);
+    border: 2px solid var(--neon-blue);
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.btn:hover {
+    background: rgba(0, 240, 255, 0.15);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+}
+
+/* === СТРАНИЦА ТОВАРА === */
+.product-detail {
+    display: flex;
+    gap: 50px;
+    align-items: flex-start;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.product-image img {
+    width: 350px;
+    height: 350px;
+    object-fit: cover;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.product-info h1 {
+    font-size: 2.2em;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.product-info p {
+    margin: 15px 0;
+    line-height: 1.7;
+    font-size: 1.1em;
+}
+
+.btn-add {
+    background: transparent;
+    color: var(--neon-pink);
+    border: 2px solid var(--neon-pink);
+    padding: 12px 30px;
+    font-size: 1.1em;
+    margin-top: 20px;
+}
+
+.btn-add:hover {
+    background: rgba(255, 0, 200, 0.2);
+    box-shadow: 0 0 20px rgba(255, 0, 200, 0.5);
+}
+
+/* === КОРЗИНА === */
+.cart-item {
+    display: flex;
+    gap: 25px;
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 20px;
+    margin-bottom: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cart-item-image img {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 16px;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 15px 0;
+}
+
+.qty-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 240, 255, 0.1);
+    border: 2px solid var(--neon-blue);
+    border-radius: 50%;
+    color: var(--neon-blue);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.qty-btn:hover {
+    background: rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.btn-remove {
+    background: transparent;
+    color: #ff4d94;
+    border: 2px solid #ff4d94;
+    padding: 6px 16px;
+    font-size: 0.95em;
+    margin-top: 10px;
+}
+
+/* === ФОРМА === */
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 14px;
+    background: rgba(30, 30, 60, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: white;
+    font-size: 1em;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.btn-checkout {
+    background: transparent;
+    color: var(--neon-pink);
+    border: 2px solid var(--neon-pink);
+    padding: 14px 35px;
+    font-size: 1.2em;
+    margin-top: 20px;
+}
+
+/* === АНИМАЦИИ === */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.container > * {
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* === АДАПТИВНОСТЬ === */
+@media (max-width: 768px) {
+    .product-detail {
+        flex-direction: column;
+        text-align: center;
+    }
+    .product-image img {
+        width: 280px;
+        height: 280px;
+    }
+    nav {
+        flex-wrap: wrap;
+    }
+}
+
+.cabinet-section {
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.order-card {
+    background: rgba(30, 30, 60, 0.4);
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 15px;
+}
+
+details summary {
+    cursor: pointer;
+    color: var(--neon-blue);
+    text-decoration: underline;
+}
+
+nav .lk-link {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}

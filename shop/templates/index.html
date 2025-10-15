@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Главная — SportShop{% endblock %}
+
+{% block content %}
+    <h1>Популярные товары</h1>
+
+    <div class="carousel-container">
+        <button class="carousel-btn carousel-btn--prev" id="prevBtn">‹</button>
+        <div class="carousel" id="carousel">
+            <div class="carousel-item">
+                <img src="https://avatars.mds.yandex.net/i?id=d2f668f619beca9f18b739ae88cdad4a_sr-10250482-images-thumbs&n=13" alt="Футболка">
+                <h3>Футболка Nike Dri-FIT</h3>
+                <p>1 990 ₽</p>
+            </div>
+            <div class="carousel-item">
+                <img src="https://i.ebayimg.com/images/g/9ZgAAOSwnBRgRjsA/s-l500.jpg" alt="Шорты">
+                <h3>Шорты Adidas Essentials</h3>
+                <p>2 490 ₽</p>
+            </div>
+            <div class="carousel-item">
+                <img src="https://cdn-img.poizonapp.com/pro-img/cut-img/20230608/8abc80e470cf4787a5e54544e7becb17.jpg" alt="Кроссовки">
+                <h3>Кроссовки Puma Ignite</h3>
+                <p>5 990 ₽</p>
+            </div>
+            <div class="carousel-item">
+                <img src="https://cdn1.ozone.ru/s3/multimedia-a/6363196306.jpg" alt="Толстовка">
+                <h3>Толстовка Under Armour</h3>
+                <p>3 790 ₽</p>
+            </div>
+            <div class="carousel-item">
+                <img src="https://cdn1.ozone.ru/s3/multimedia-1-u/c600/7618235466.jpg" alt="Леггинсы">
+                <h3>Леггинсы Gymshark</h3>
+                <p>2 890 ₽</p>
+            </div>
+            <div class="carousel-item">
+                <img src="https://cdn0.youla.io/files/images/720_720_out/5f/0d/5f0df035d4771d25a47c0b41-1.jpg" alt="Куртка">
+                <h3>Ветровка Reebok</h3>
+                <p>4 290 ₽</p>
+            </div>
+        </div>
+        <button class="carousel-btn carousel-btn--next" id="nextBtn">›</button>
+    </div>
+
+    <div class="intro-text">
+        <p>Добро пожаловать в SportShop — ваш надёжный партнёр в мире спорта и активного образа жизни!</p>
+        <p>Мы предлагаем только проверенное качество, комфорт и стиль для ваших тренировок и повседневной носки.</p>
+    </div>
+{% endblock %}

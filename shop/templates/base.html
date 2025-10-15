@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NEXUS SPORT{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+    <!-- Анимированный фон -->
+    <div class="background">
+        <div class="blob"></div>
+        <div class="blob"></div>
+        <div class="blob"></div>
+    </div>
+
+    <div class="content-wrapper">
+        <header>
+            <h1>NEXUS SPORT</h1>
+        </header>
+
+        <nav>
+            <a href="/">Главная</a>
+            <a href="/about/">О нас</a>
+            <a href="/каталог товаров/">Каталог</a>
+            <a href="{% url 'cart' %}" class="cart-link">Корзина</a>
+            <a href="{% url 'cabinet' %}" class="lk-link">👤 ЛК</a>
+        </nav>
+
+        <main class="container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('NEXUS SPORT — готов к работе!');
+
+        const carousel = document.getElementById('carousel');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        if (!carousel || !prevBtn || !nextBtn) {
+            console.warn('Карусель не найдена — проверьте HTML');
+            return;
+        }
+
+        const itemWidth = 300; // ширина карточки + отступы (280 + 20)
+        let currentIndex = 0;
+        const totalItems = carousel.children.length;
+
+        function moveToSlide(index) {
+            if (index < 0) index = totalItems - 1;
+            if (index >= totalItems) index = 0;
+            currentIndex = index;
+            carousel.style.transform = `translateX(-${currentIndex * itemWidth}px)`;
+        }
+
+        // Кнопки
+        prevBtn.addEventListener('click', () => moveToSlide(currentIndex - 1));
+        nextBtn.addEventListener('click', () => moveToSlide(currentIndex + 1));
+
+        // Автопрокрутка каждые 4 секунды
+        let autoSlide = setInterval(() => {
+            moveToSlide(currentIndex + 1);
+        }, 4000);
+
+        // Остановить автопрокрутку при наведении
+        const carouselContainer = document.querySelector('.carousel-container');
+        if (carouselContainer) {
+            carouselContainer.addEventListener('mouseenter', () => clearInterval(autoSlide));
+            carouselContainer.addEventListener('mouseleave', () => {
+                autoSlide = setInterval(() => {
+                    moveToSlide(currentIndex + 1);
+                }, 4000);
+            });
+        }
+    });
+</script>
+</body>
+</html>
