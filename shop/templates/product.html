@@ -1,25 +1,67 @@
 {% extends "base.html" %}
-
-{% block title %}{{ product.name }} — SportShop{% endblock %}
-
 {% block content %}
-    <div class="product-detail">
-        <div class="product-image">
+    <div style="display:flex;gap:50px;align-items:flex-start;justify-content:center;margin-top:30px;flex-wrap:wrap;">
+        <div>
             {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:350px;height:350px;object-fit:cover;border-radius:20px;">
             {% else %}
-                <div class="placeholder-img" style="width:300px; height:300px; display:flex; align-items:center; justify-content:center;">Нет фото</div>
+                <div style="width:350px;height:350px;background:#333;border-radius:20px;"></div>
             {% endif %}
         </div>
-        <div class="product-info">
+        <div style="max-width:500px;">
             <h1>{{ product.name }}</h1>
-            <p class="price">{{ product.price }} ₽</p>
+
+            <!-- Скидка -->
+            {% with discount_info=product.get_discount_info %}
+                {% if discount_info.0 > 0 %}
+                    <p style="font-size:1.2em;color:#aaa;text-decoration:line-through;">
+                        Старая цена: {{ product.price }} ₽
+                    </p>
+                    <p style="font-size:1.4em;font-weight:bold;color:var(--neon-pink);">
+                        Скидка {{ discount_info.0 }}%! Новая цена: {{ discount_info.1 }} ₽
+                    </p>
+                {% else %}
+                    <p style="font-size:1.4em;font-weight:bold;background:linear-gradient(to right,var(--neon-blue),white);-webkit-background-clip:text;color:transparent;">
+                        {{ product.price }} ₽
+                    </p>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Остаток -->
+            <p style="margin:15px 0;">
+                {% if product.stock > 0 %}
+                    <span style="color: {% if product.stock <= 3 %}#ff5252{% elif product.stock <= 5 %}#ff9800{% else %}#66bb6a{% endif %}; font-weight:bold;">
+                        В наличии: {{ product.stock }} шт.
+                    </span>
+                    {% if product.get_discount_info.0 > 0 %}
+                        <span style="color:var(--neon-pink); margin-left:10px;">
+                            🔥 Скидка {{ product.get_discount_info.0 }}%!
+                        </span>
+                    {% endif %}
+                {% else %}
+                    <span style="color:#ff5252;font-weight:bold;">Нет в наличии</span>
+                {% endif %}
+            </p>
+            
             <p>{{ product.description|default:"Описание отсутствует." }}</p>
-            <form method="post" action="{% url 'add_to_cart' product.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-add">Добавить в корзину</button>
-            </form>
-            <a href="{% url 'catalog' %}" class="btn btn-back">← Назад к каталогу</a>
+
+            <!-- Форма добавления с выбором количества -->
+            {% if product.stock > 0 %}
+                <form method="post" action="{% url 'add_to_cart' product.id %}" style="margin-top:20px;">
+                    {% csrf_token %}
+                    <div style="display:flex;align-items:center;gap:15px;margin:15px 0;">
+                        <label>Количество:</label>
+                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" 
+                               style="width:80px;padding:8px;border-radius:8px;background:rgba(30,30,60,0.6);color:white;border:1px solid rgba(255,255,255,0.2);">
+                        <span style="color:#aaa;">макс. {{ product.stock }}</span>
+                    </div>
+                    <button type="submit" class="btn" style="color:var(--neon-pink);border-color:var(--neon-pink);">
+                        Добавить в корзину
+                    </button>
+                </form>
+            {% endif %}
+
+            <a href="{% url 'catalog' %}" class="btn" style="margin-top:15px;display:inline-block;">← Назад</a>
         </div>
     </div>
 {% endblock %}

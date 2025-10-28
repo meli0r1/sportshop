@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
+from django.db import transaction
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from .models import Product, Profile
+from .models import Product, Profile, Order
 
 # Главные страницы
 def index_page(request):
@@ -32,22 +33,84 @@ def cart_view(request):
     for product_id, item in cart.items():
         product = get_object_or_404(Product, id=product_id)
         qty = item.get('quantity', 1)
-        item_total = float(product.price) * qty
+        # Применяем скидку
+        _, discounted_price = product.get_discount_info()
+        item_total = discounted_price * qty
         total += item_total
-        cart_items.append({'product': product, 'quantity': qty, 'total': item_total})
-    return render(request, 'cart.html', {'cart_items': cart_items, 'total': total})
+        cart_items.append({
+            'product': product,
+            'quantity': qty,
+            'total': round(item_total, 2)
+        })
+    return render(request, 'cart.html', {'cart_items': cart_items, 'total': round(total, 2)})
 
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    if product.stock <= 0:
+        messages.error(request, 'Товар закончился!')
+        return redirect('product_detail', product_id=product_id)
+
     cart = request.session.get('cart', {})
     pid = str(product_id)
-    if pid in cart:
-        cart[pid]['quantity'] += 1
+
+    if request.method == 'POST':
+        try:
+            quantity = int(request.POST.get('quantity', 1))
+        except ValueError:
+            quantity = 1
+
+        # Ограничиваем количеством на складе
+        if quantity > product.stock:
+            messages.error(request, f'Нельзя добавить больше {product.stock} шт. (в наличии только {product.stock})')
+            return redirect('product_detail', product_id=product_id)
+
+        if pid in cart:
+            new_qty = cart[pid]['quantity'] + quantity
+            if new_qty > product.stock:
+                messages.warning(request, f'В корзине уже есть товары. Максимум можно добавить ещё {product.stock - cart[pid]["quantity"]} шт.')
+                return redirect('product_detail', product_id=product_id)
+            cart[pid]['quantity'] = new_qty
+        else:
+            cart[pid] = {'quantity': quantity}
+
+        request.session['cart'] = cart
+        messages.success(request, f'"{product.name}" ({quantity} шт.) добавлен в корзину!')
     else:
-        cart[pid] = {'quantity': 1}
-    request.session['cart'] = cart
-    messages.success(request, f'"{product.name}" добавлен в корзину!')
+        # Старый способ (без количества) — для совместимости
+        cart[pid] = cart.get(pid, {'quantity': 0})
+        if cart[pid]['quantity'] < product.stock:
+            cart[pid]['quantity'] += 1
+            request.session['cart'] = cart
+            messages.success(request, f'"{product.name}" добавлен в корзину!')
+
     return redirect('product_detail', product_id=product_id)
+
+def update_cart(request, product_id):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        cart = request.session.get('cart', {})
+        pid = str(product_id)
+        product = get_object_or_404(Product, id=product_id)
+
+        if pid in cart:
+            current_qty = cart[pid]['quantity']
+
+            if action == 'increase':
+                if current_qty < product.stock:
+                    cart[pid]['quantity'] += 1
+                else:
+                    messages.warning(request, f'Нельзя добавить больше {product.stock} шт.')
+            elif action == 'decrease':
+                if current_qty > 1:
+                    cart[pid]['quantity'] -= 1
+                else:
+                    del cart[pid]
+            elif action == 'remove':
+                del cart[pid]
+
+            request.session['cart'] = cart
+
+    return redirect('cart')
 
 # Регистрация
 def register(request):
@@ -89,7 +152,11 @@ def confirm_email(request):
 @login_required
 def personal_cabinet(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
-    return render(request, 'cabinet.html', {'profile': profile})
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'cabinet.html', {
+        'profile': profile,
+        'orders': orders
+    })
 
 @login_required
 def edit_profile(request):
@@ -108,6 +175,7 @@ def edit_profile(request):
     # Теперь profile точно существует
     return render(request, 'edit_profile.html', {'profile': profile})
 
+
 @login_required
 def checkout_page(request):
     cart = request.session.get('cart', {})
@@ -115,32 +183,92 @@ def checkout_page(request):
         messages.error(request, 'Корзина пуста!')
         return redirect('cart')
 
-    # Получаем профиль (гарантируем существование)
     profile, created = Profile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
-        # Обновляем данные из формы
+        # Обновляем данные профиля
         profile.phone = request.POST.get('phone', profile.phone)
         profile.address = request.POST.get('address', profile.address)
         profile.save()
 
-        # Здесь можно создать заказ в БД (пока просто очищаем корзину)
-        request.session['cart'] = {}
-        messages.success(request, 'Заказ успешно оформлен! Спасибо за покупку!')
-        return redirect('cabinet')
+        # Проверяем и обновляем остатки
+        cart_items = []
+        total = 0
+        errors = []
 
-    # Передаём профиль и корзину в шаблон
+        # Собираем данные и проверяем остатки
+        for product_id, item in cart.items():
+            product = get_object_or_404(Product, id=product_id)
+            qty = item.get('quantity', 1)
+            _, discounted_price = product.get_discount_info()
+            item_total = discounted_price * qty
+
+            if qty > product.stock:
+                errors.append(f'Товар "{product.name}": недостаточно на складе (в наличии {product.stock}, запрошено {qty})')
+            else:
+                cart_items.append({
+                    'product': product,
+                    'quantity': qty,
+                    'total': item_total
+                })
+                total += item_total
+
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return render(request, 'checkout.html', {
+                'profile': profile,
+                'cart_items': cart_items,
+                'total': round(total, 2)
+            })
+
+        # Всё ок — уменьшаем остатки и оформляем заказ
+        with transaction.atomic():
+            order_items = []
+            for item in cart_items:
+                product = item['product']
+                qty = item['quantity']
+                # Уменьшаем остаток
+                product.stock -= qty
+                product.save()
+                # Сохраняем данные товара (на случай, если его удалят позже)
+                order_items.append({
+                    'product_id': product.id,
+                    'name': product.name,
+                    'price': float(product.price),
+                    'discounted_price': item['total'] / qty,
+                    'quantity': qty,
+                    'total': item['total']
+                })
+
+                order = Order.objects.create(
+                    user=request.user,
+                    total=total,
+                    items=order_items
+                )
+
+
+        # Очищаем корзину
+        request.session['cart'] = {}
+        messages.success(request, f'Заказ #{order.id} успешно оформлен! Спасибо за покупку!')
+        return redirect('cabinet')
+    # GET-запрос — показываем страницу
     cart_items = []
     total = 0
     for product_id, item in cart.items():
         product = get_object_or_404(Product, id=product_id)
         qty = item.get('quantity', 1)
-        item_total = float(product.price) * qty
+        _, discounted_price = product.get_discount_info()
+        item_total = discounted_price * qty
         total += item_total
-        cart_items.append({'product': product, 'quantity': qty, 'total': item_total})
+        cart_items.append({
+            'product': product,
+            'quantity': qty,
+            'total': item_total
+        })
 
     return render(request, 'checkout.html', {
         'profile': profile,
         'cart_items': cart_items,
-        'total': total
+        'total': round(total, 2)
     })

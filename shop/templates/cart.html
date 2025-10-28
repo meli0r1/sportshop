@@ -10,11 +10,64 @@
                 {% else %}
                     <div style="width:140px;height:140px;background:#333;border-radius:16px;"></div>
                 {% endif %}
-                <div>
+                <div style="flex:1;">
                     <h3>{{ item.product.name }}</h3>
-                    <p>Цена: {{ item.product.price }} ₽</p>
-                    <p>Кол-во: {{ item.quantity }}</p>
+                    
+                    <!-- Проверка остатка -->
+                    {% if item.product.stock < item.quantity %}
+                        <p style="color:#ff5252;font-weight:bold;">
+                            ⚠️ В наличии только {{ item.product.stock }} шт.! 
+                            Измените количество.
+                        </p>
+                    {% endif %}
+
+                    <!-- Цена с учётом скидки -->
+                    {% with discount_info=item.product.get_discount_info %}
+                        {% if discount_info.0 > 0 %}
+                            <p style="color:#aaa;text-decoration:line-through;">
+                                {{ item.product.price }} ₽
+                            </p>
+                            <p style="font-weight:bold;color:var(--neon-pink);">
+                                {{ discount_info.1 }} ₽ за шт.
+                            </p>
+                        {% else %}
+                            <p>{{ item.product.price }} ₽ за шт.</p>
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Управление количеством -->
+                    <div style="display:flex;align-items:center;gap:10px;margin:15px 0;">
+                        <form method="post" action="{% url 'update_cart' item.product.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="decrease">
+                            <button type="submit" class="qty-btn" 
+                                {% if item.quantity <= 1 %}disabled{% endif %}>−</button>
+                        </form>
+                        
+                        <span style="font-size:1.2em;font-weight:bold;">{{ item.quantity }}</span>
+                        
+                        <form method="post" action="{% url 'update_cart' item.product.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="increase">
+                            <!-- Ограничиваем максимумом -->
+                            {% if item.quantity < item.product.stock %}
+                                <button type="submit" class="qty-btn">+</button>
+                            {% else %}
+                                <button type="submit" class="qty-btn" disabled>+</button>
+                            {% endif %}
+                        </form>
+                        
+                        <span style="color:#aaa;font-size:0.9em;">макс. {{ item.product.stock }}</span>
+                    </div>
+
                     <p style="font-weight:bold;color:var(--neon-blue);">Итого: {{ item.total }} ₽</p>
+
+                    <!-- Кнопка удаления -->
+                    <form method="post" action="{% url 'update_cart' item.product.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="remove">
+                        <button type="submit" class="btn" style="color:#ff5252;border-color:#ff5252;padding:5px 12px;font-size:0.9em;">Удалить</button>
+                    </form>
                 </div>
             </div>
         {% endfor %}
@@ -23,7 +76,6 @@
             Итого: {{ total }} ₽
         </div>
 
-        <!-- Кнопка "Оформить заказ" только для авторизованных -->
         {% if user.is_authenticated %}
             <div style="text-align:center;margin:30px 0;">
                 <a href="{% url 'checkout_page' %}" class="btn" style="color:var(--neon-pink);border-color:var(--neon-pink);padding:14px 35px;font-size:1.2em;">

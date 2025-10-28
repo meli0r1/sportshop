@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
     <h1>Личный кабинет</h1>
+
     <div style="background:var(--card-bg);padding:25px;border-radius:20px;margin-bottom:30px;backdrop-filter:blur(10px);">
         <h2>Ваши данные</h2>
         <p><strong>Логин:</strong> {{ user.username }}</p>
@@ -9,8 +10,34 @@
         <p><strong>Адрес:</strong> {{ profile.address|default:"Не указан" }}</p>
         <a href="{% url 'edit_profile' %}" class="btn" style="margin-top:15px;display:inline-block;">Настройки профиля</a>
     </div>
+
     <div style="background:var(--card-bg);padding:25px;border-radius:20px;backdrop-filter:blur(10px);">
         <h2>История заказов</h2>
-        <p>Заказы пока не реализованы (можно добавить позже).</p>
+        {% if orders %}
+            {% for order in orders %}
+                <div style="border:1px solid rgba(0,240,255,0.2);border-radius:16px;padding:20px;margin-bottom:20px;">
+                    <h3>Заказ #{{ order.id }} от {{ order.created_at|date:"d.m.Y" }} в {{ order.created_at|time:"H:i" }}</h3>
+                    <p style="font-size:1.2em;font-weight:bold;color:var(--neon-blue);">Итого: {{ order.total }} ₽</p>
+                    <details style="margin-top:15px;">
+                        <summary style="color:var(--neon-blue);cursor:pointer;text-decoration:underline;">Состав заказа</summary>
+                        <ul style="margin-top:10px;padding-left:20px;">
+                            {% for item in order.items %}
+                                <li>
+                                    {{ item.name }} × {{ item.quantity }}
+                                    {% if item.discounted_price != item.price %}
+                                        <span style="color:#aaa;text-decoration:line-through;">{{ item.price }} ₽</span>
+                                        <span style="color:var(--neon-pink);">→ {{ item.discounted_price|floatformat:2 }} ₽</span>
+                                    {% else %}
+                                        {{ item.price }} ₽
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>У вас пока нет заказов.</p>
+        {% endif %}
     </div>
 {% endblock %}
