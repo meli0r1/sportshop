@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Подтверждение email</h1>
+    <p>Код отправлен на ваш email.</p>
+    <form method="post" style="max-width:300px;margin:0 auto;">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Код подтверждения:</label>
+            <input type="text" name="code" required maxlength="6" style="text-align:center;font-size:1.2em;">
+        </div>
+        <button type="submit" class="btn">Подтвердить</button>
+    </form>
+{% endblock %}

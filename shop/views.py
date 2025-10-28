@@ -1,11 +1,17 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login
+from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import Product, UserProfile, Order
-import json
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from .models import Product, Profile
 
-
+# Главные страницы
 def index_page(request):
-    return render(request, 'index.html')
+    products = Product.objects.all()[:6]
+    return render(request, 'index.html', {'products': products})
 
 def about_page(request):
     return render(request, 'about.html')
@@ -18,142 +24,123 @@ def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'product.html', {'product': product})
 
-def add_to_cart(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    cart = request.session.get('cart', {})
-    product_id_str = str(product_id)
-
-    if product_id_str in cart:
-        cart[product_id_str]['quantity'] += 1
-    else:
-        cart[product_id_str] = {
-            'quantity': 1
-        }
-    request.session['cart'] = cart
-    messages.success(request, f'"{product.name}" добавлен в корзину!')
-    return redirect('product_detail', product_id=product_id)
-
-
+# Корзина (в сессии)
 def cart_view(request):
     cart = request.session.get('cart', {})
     cart_items = []
     total = 0
-
-    for product_id, item_data in cart.items():
-        product = Product.objects.get(id=product_id)
-        quantity = item_data['quantity']
-        item_total = float(product.price) * quantity
+    for product_id, item in cart.items():
+        product = get_object_or_404(Product, id=product_id)
+        qty = item.get('quantity', 1)
+        item_total = float(product.price) * qty
         total += item_total
-        cart_items.append({
-            'product': product,
-            'quantity': quantity,
-            'total': item_total,
-        })
+        cart_items.append({'product': product, 'quantity': qty, 'total': item_total})
+    return render(request, 'cart.html', {'cart_items': cart_items, 'total': total})
 
-    return render(request, 'cart.html', {
+def add_to_cart(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    cart = request.session.get('cart', {})
+    pid = str(product_id)
+    if pid in cart:
+        cart[pid]['quantity'] += 1
+    else:
+        cart[pid] = {'quantity': 1}
+    request.session['cart'] = cart
+    messages.success(request, f'"{product.name}" добавлен в корзину!')
+    return redirect('product_detail', product_id=product_id)
+
+# Регистрация
+def register(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        email = request.POST['email']
+        password = request.POST['password']
+        password2 = request.POST['password2']
+        if password != password2:
+            messages.error(request, 'Пароли не совпадают!')
+            return render(request, 'registration/register.html')
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Логин занят!')
+            return render(request, 'registration/register.html')
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email уже зарегистрирован!')
+            return render(request, 'registration/register.html')
+        user = User.objects.create_user(username=username, email=email, password=password)
+        code = get_random_string(6, '0123456789')
+        request.session['confirmation_code'] = code
+        request.session['user_id'] = user.id
+        send_mail('Код подтверждения', f'Ваш код: {code}', settings.DEFAULT_FROM_EMAIL, [email])
+        messages.success(request, 'Проверьте email и введите код.')
+        return redirect('confirm_email')
+    return render(request, 'registration/register.html')
+
+def confirm_email(request):
+    if request.method == 'POST':
+        code = request.POST['code']
+        if code == request.session.get('confirmation_code'):
+            user = User.objects.get(id=request.session['user_id'])
+            login(request, user)
+            messages.success(request, 'Добро пожаловать!')
+            return redirect('cabinet')
+        messages.error(request, 'Неверный код!')
+    return render(request, 'registration/confirm_email.html')
+
+# ЛК
+@login_required
+def personal_cabinet(request):
+    profile, created = Profile.objects.get_or_create(user=request.user)
+    return render(request, 'cabinet.html', {'profile': profile})
+
+@login_required
+def edit_profile(request):
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        user = request.user
+        user.email = request.POST.get('email', user.email)
+        profile.phone = request.POST.get('phone', '')
+        profile.address = request.POST.get('address', '')
+        user.save()
+        profile.save()
+        messages.success(request, 'Данные обновлены!')
+        return redirect('cabinet')
+
+    # Теперь profile точно существует
+    return render(request, 'edit_profile.html', {'profile': profile})
+
+@login_required
+def checkout_page(request):
+    cart = request.session.get('cart', {})
+    if not cart:
+        messages.error(request, 'Корзина пуста!')
+        return redirect('cart')
+
+    # Получаем профиль (гарантируем существование)
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        # Обновляем данные из формы
+        profile.phone = request.POST.get('phone', profile.phone)
+        profile.address = request.POST.get('address', profile.address)
+        profile.save()
+
+        # Здесь можно создать заказ в БД (пока просто очищаем корзину)
+        request.session['cart'] = {}
+        messages.success(request, 'Заказ успешно оформлен! Спасибо за покупку!')
+        return redirect('cabinet')
+
+    # Передаём профиль и корзину в шаблон
+    cart_items = []
+    total = 0
+    for product_id, item in cart.items():
+        product = get_object_or_404(Product, id=product_id)
+        qty = item.get('quantity', 1)
+        item_total = float(product.price) * qty
+        total += item_total
+        cart_items.append({'product': product, 'quantity': qty, 'total': item_total})
+
+    return render(request, 'checkout.html', {
+        'profile': profile,
         'cart_items': cart_items,
         'total': total
     })
-
-
-def update_cart(request, product_id):
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        cart = request.session.get('cart', {})
-        product_id_str = str(product_id)
-
-        if product_id_str in cart:
-            if action == 'increase':
-                cart[product_id_str]['quantity'] += 1
-            elif action == 'decrease':
-                if cart[product_id_str]['quantity'] > 1:
-                    cart[product_id_str]['quantity'] -= 1
-                else:
-                    del cart[product_id_str]  # удаляем, если 0
-            elif action == 'remove':
-                del cart[product_id_str]
-
-        request.session['cart'] = cart
-    return redirect('cart')
-
-
-def checkout(request):
-    if request.method == 'POST':
-        messages.success(request, 'Заказ успешно оформлен! Спасибо за покупку!')
-        request.session['cart'] = {}
-        return redirect('home')
-    return redirect('cart')
-
-def get_or_create_profile(request):
-    session_key = request.session.session_key
-    if not session_key:
-        request.session.create()
-        session_key = request.session.session_key
-
-    profile, created = UserProfile.objects.get_or_create(
-        session_key=session_key,
-        defaults={'name': '', 'email': '', 'phone': '', 'address': ''}
-    )
-    return profile
-
-def personal_cabinet(request):
-    profile = get_or_create_profile(request)
-    orders = Order.objects.filter(profile=profile).order_by('-created_at')
-
-    if request.method == 'POST':
-        profile.name = request.POST.get('name', '')
-        profile.email = request.POST.get('email', '')
-        profile.phone = request.POST.get('phone', '')
-        profile.address = request.POST.get('address', '')
-        profile.save()
-        messages.success(request, 'Данные успешно обновлены!')
-        return redirect('cabinet')
-
-    return render(request, 'cabinet.html', {
-        'profile': profile,
-        'orders': orders
-    })
-
-def checkout(request):
-    if request.method == 'POST':
-        profile = get_or_create_profile(request)
-        # Обновляем данные профиля из формы
-        profile.name = request.POST.get('name')
-        profile.email = request.POST.get('email')
-        profile.phone = request.POST.get('phone')
-        profile.address = request.POST.get('address')
-        profile.save()
-
-        # Сохраняем заказ
-        cart = request.session.get('cart', {})
-        if not cart:
-            messages.error(request, 'Корзина пуста!')
-            return redirect('cart')
-
-        total = 0
-        items_data = []
-        for product_id, item in cart.items():
-            product = Product.objects.get(id=product_id)
-            qty = item['quantity']
-            item_total = float(product.price) * qty
-            total += item_total
-            items_data.append({
-                'id': product.id,
-                'name': product.name,
-                'price': str(product.price),
-                'quantity': qty,
-                'total': item_total
-            })
-
-        order = Order.objects.create(
-            profile=profile,
-            total=total,
-            items_data=items_data
-        )
-
-        # Очистить корзину
-        request.session['cart'] = {}
-        messages.success(request, f'Заказ #{order.id} успешно оформлен!')
-        return redirect('cabinet')
-
-    return redirect('cart')

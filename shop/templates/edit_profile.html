@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Настройки профиля</h1>
+    <form method="post" style="max-width:600px;margin:0 auto;">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Логин (нельзя изменить):</label>
+            <input type="text" value="{{ user.username }}" disabled>
+        </div>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" name="email" value="{{ user.email }}" required>
+        </div>
+        <div class="form-group">
+            <label>Телефон:</label>
+            <input type="tel" name="phone" value="{{ profile.phone }}">
+        </div>
+        <div class="form-group">
+            <label>Адрес доставки:</label>
+            <textarea name="address" rows="4">{{ profile.address }}</textarea>
+        </div>
+        <button type="submit" class="btn" style="color:var(--neon-pink);border-color:var(--neon-pink);">Сохранить</button>
+        <a href="{% url 'cabinet' %}" style="display:inline-block;margin-left:15px;">Отмена</a>
+    </form>
+{% endblock %}

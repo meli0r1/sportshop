@@ -1,53 +1,16 @@
 {% extends "base.html" %}
-
-{% block title %}Личный кабинет — SportShop{% endblock %}
-
 {% block content %}
     <h1>Личный кабинет</h1>
-
-    <div class="cabinet-section">
+    <div style="background:var(--card-bg);padding:25px;border-radius:20px;margin-bottom:30px;backdrop-filter:blur(10px);">
         <h2>Ваши данные</h2>
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label>Имя:</label>
-                <input type="text" name="name" value="{{ profile.name }}" required>
-            </div>
-            <div class="form-group">
-                <label>Email:</label>
-                <input type="email" name="email" value="{{ profile.email }}" required>
-            </div>
-            <div class="form-group">
-                <label>Телефон:</label>
-                <input type="tel" name="phone" value="{{ profile.phone }}" required>
-            </div>
-            <div class="form-group">
-                <label>Адрес доставки:</label>
-                <textarea name="address" required>{{ profile.address }}</textarea>
-            </div>
-            <button type="submit" class="btn btn-checkout">Сохранить</button>
-        </form>
+        <p><strong>Логин:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Телефон:</strong> {{ profile.phone|default:"Не указан" }}</p>
+        <p><strong>Адрес:</strong> {{ profile.address|default:"Не указан" }}</p>
+        <a href="{% url 'edit_profile' %}" class="btn" style="margin-top:15px;display:inline-block;">Настройки профиля</a>
     </div>
-
-    <div class="cabinet-section">
+    <div style="background:var(--card-bg);padding:25px;border-radius:20px;backdrop-filter:blur(10px);">
         <h2>История заказов</h2>
-        {% if orders %}
-            {% for order in orders %}
-                <div class="order-card">
-                    <h3>Заказ #{{ order.id }} от {{ order.created_at|date:"d.m.Y H:i" }}</h3>
-                    <p>Сумма: {{ order.total }} ₽</p>
-                    <details>
-                        <summary>Показать товары</summary>
-                        <ul>
-                            {% for item in order.items_data %}
-                                <li>{{ item.name }} × {{ item.quantity }} — {{ item.total }} ₽</li>
-                            {% endfor %}
-                        </ul>
-                    </details>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>У вас пока нет заказов.</p>
-        {% endif %}
+        <p>Заказы пока не реализованы (можно добавить позже).</p>
     </div>
 {% endblock %}

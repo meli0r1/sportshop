@@ -1,84 +1,46 @@
 {% extends "base.html" %}
-
-{% block title %}Корзина — SportShop{% endblock %}
-
 {% block content %}
-    <h1>Ваша корзина</h1>
+    <h1>Корзина</h1>
 
     {% if cart_items %}
-        <div class="cart-items">
-            {% for item in cart_items %}
-                <div class="cart-item">
-                    <div class="cart-item-image">
-                        {% if item.product.image %}
-                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
-                        {% else %}
-                            <div class="placeholder-img">Нет фото</div>
-                        {% endif %}
-                    </div>
-                    <div class="cart-item-info">
-                        <h3>{{ item.product.name }}</h3>
-                        <p class="price">{{ item.product.price }} ₽</p>
-                        
-                        <!-- Управление количеством -->
-                        <div class="quantity-control">
-                            <form method="post" action="{% url 'update_cart' item.product.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="decrease">
-                                <button type="submit" class="qty-btn">−</button>
-                            </form>
-                            
-                            <span class="qty-value">{{ item.quantity }}</span>
-                            
-                            <form method="post" action="{% url 'update_cart' item.product.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="increase">
-                                <button type="submit" class="qty-btn">+</button>
-                            </form>
-                        </div>
-
-                        <p class="item-total">Итого: {{ item.total }} ₽</p>
-
-                        <!-- Кнопка удаления -->
-                        <form method="post" action="{% url 'update_cart' item.product.id %}" class="remove-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="remove">
-                            <button type="submit" class="btn btn-remove">Удалить</button>
-                        </form>
-                    </div>
+        {% for item in cart_items %}
+            <div style="display:flex;gap:25px;background:var(--card-bg);padding:25px;border-radius:20px;margin-bottom:25px;backdrop-filter:blur(10px);">
+                {% if item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width:140px;height:140px;object-fit:cover;border-radius:16px;">
+                {% else %}
+                    <div style="width:140px;height:140px;background:#333;border-radius:16px;"></div>
+                {% endif %}
+                <div>
+                    <h3>{{ item.product.name }}</h3>
+                    <p>Цена: {{ item.product.price }} ₽</p>
+                    <p>Кол-во: {{ item.quantity }}</p>
+                    <p style="font-weight:bold;color:var(--neon-blue);">Итого: {{ item.total }} ₽</p>
                 </div>
-            {% endfor %}
+            </div>
+        {% endfor %}
+
+        <div style="text-align:right;font-size:1.4em;font-weight:bold;color:var(--neon-blue);margin:20px 0;">
+            Итого: {{ total }} ₽
         </div>
 
-        <div class="cart-summary">
-            <h2>Итого: {{ total }} ₽</h2>
-        </div>
+        <!-- Кнопка "Оформить заказ" только для авторизованных -->
+        {% if user.is_authenticated %}
+            <div style="text-align:center;margin:30px 0;">
+                <a href="{% url 'checkout_page' %}" class="btn" style="color:var(--neon-pink);border-color:var(--neon-pink);padding:14px 35px;font-size:1.2em;">
+                    Оформить заказ
+                </a>
+            </div>
+        {% else %}
+            <p style="text-align:center;color:#aaa;margin:20px 0;">
+                Войдите в аккаунт, чтобы оформить заказ.
+            </p>
+            <div style="text-align:center;">
+                <a href="{% url 'login' %}" class="btn">Войти</a>
+            </div>
+        {% endif %}
 
-        <div class="order-form">
-            <h2>Оформить заказ</h2>
-            <form method="post" action="{% url 'checkout' %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label>Имя:</label>
-                    <input type="text" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label>Телефон:</label>
-                    <input type="tel" name="phone" required>
-                </div>
-                <div class="form-group">
-                    <label>Адрес доставки:</label>
-                    <textarea name="address" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-checkout">Оформить заказ</button>
-            </form>
-        </div>
     {% else %}
-        <p>Ваша корзина пуста.</p>
-        <a href="{% url 'catalog' %}" class="btn">Перейти в каталог</a>
+        <p>Корзина пуста.</p>
+        <a href="{% url 'catalog' %}" class="btn">В каталог</a>
     {% endif %}
 {% endblock %}

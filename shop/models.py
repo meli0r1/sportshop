@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Product(models.Model):
@@ -14,31 +17,15 @@ class Product(models.Model):
         verbose_name = 'Товар'
         verbose_name_plural = 'Товары'
 
-class UserProfile(models.Model):
-    session_key = models.CharField(max_length=100, unique=True, verbose_name="Ключ сессии")
-    name = models.CharField("Имя", max_length=100, blank=True)
-    email = models.EmailField("Email", blank=True)
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField("Телефон", max_length=20, blank=True)
     address = models.TextField("Адрес доставки", blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Профиль ({self.session_key})"
+        return f"Профиль {self.user.username}"
 
-    class Meta:
-        verbose_name = "Профиль"
-        verbose_name_plural = "Профили"
-
-class Order(models.Model):
-    profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, verbose_name="Профиль")
-    created_at = models.DateTimeField(auto_now_add=True)
-    total = models.DecimalField("Сумма", max_digits=10, decimal_places=2)
-    items_data = models.JSONField("Товары", help_text="Данные о товарах в формате JSON")
-
-    def __str__(self):
-        return f"Заказ #{self.id} от {self.created_at.strftime('%d.%m.%Y')}"
-
-    class Meta:
-        verbose_name = "Заказ"
-        verbose_name_plural = "Заказы"
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)

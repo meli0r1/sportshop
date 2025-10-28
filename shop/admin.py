@@ -1,19 +1,18 @@
 from django.contrib import admin
-
-from .models import Product, UserProfile, Order
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin
+from .models import Product, Profile
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['name', 'price']
-    list_editable = ['price']
 
-# Register your models here.
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['session_key', 'name', 'email', 'phone']
-    search_fields = ['name', 'email', 'phone']
+class ProfileInline(admin.StackedInline):
+    model = Profile
+    can_delete = False
 
-@admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'profile', 'total', 'created_at']
-    readonly_fields = ['items_data']
+class CustomUserAdmin(UserAdmin):
+    inlines = (ProfileInline,)
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
