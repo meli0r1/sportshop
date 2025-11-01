@@ -17,7 +17,34 @@
             {% for order in orders %}
                 <div style="border:1px solid rgba(0,240,255,0.2);border-radius:16px;padding:20px;margin-bottom:20px;">
                     <h3>Заказ #{{ order.id }} от {{ order.created_at|date:"d.m.Y" }} в {{ order.created_at|time:"H:i" }}</h3>
-                    <p style="font-size:1.2em;font-weight:bold;color:var(--neon-blue);">Итого: {{ order.total }} ₽</p>
+                    
+                    <!-- Статус -->
+                    <p>
+                        <strong>Статус:</strong>
+                        <span style="
+                            color: {% if order.status == 'delivered' %}#66bb6a
+                                {% elif order.status == 'shipped' %}#29b6f6
+                                {% elif order.status == 'cancelled' %}#ff5252
+                                {% else %}#ff9800{% endif %};
+                            font-weight: bold;
+                        ">
+                            {{ order.get_status_display }}
+                        </span>
+                    </p>
+
+                    <!-- Трек-номер и кнопка -->
+                    {% if order.tracking_number %}
+                        <p>
+                            <strong>Трек-номер:</strong> {{ order.tracking_number }}
+                        </p>
+                        <a href="{{ order.get_tracking_url }}" target="_blank" class="btn" 
+                        style="color:var(--neon-blue);border-color:var(--neon-blue);display:inline-block;margin-top:10px;">
+                            Отследить на 1track.ru
+                        </a>
+                    {% endif %}
+
+                    <p style="font-size:1.2em;font-weight:bold;color:var(--neon-blue);margin-top:15px;">Итого: {{ order.total }} ₽</p>
+                    
                     <details style="margin-top:15px;">
                         <summary style="color:var(--neon-blue);cursor:pointer;text-decoration:underline;">Состав заказа</summary>
                         <ul style="margin-top:10px;padding-left:20px;">

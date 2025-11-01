@@ -48,14 +48,29 @@ def create_user_profile(sender, instance, created, **kwargs):
         Profile.objects.create(user=instance)
 
 class Order(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новый'),
+        ('processing', 'В обработке'),
+        ('shipped', 'В пути'),
+        ('delivered', 'Доставлен'),
+        ('cancelled', 'Отменён'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата заказа")
     total = models.DecimalField("Итого", max_digits=10, decimal_places=2)
-    # Сохраняем состав заказа как JSON (название, цена, количество)
     items = models.JSONField("Товары", default=list)
+    status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default='new')
+    tracking_number = models.CharField("Трек-номер", max_length=100, blank=True, null=True)
 
     def __str__(self):
-        return f"Заказ #{self.id} от {self.created_at.strftime('%d.%m.%Y %H:%M')}"
+        return f"Заказ #{self.id} ({self.get_status_display()})"
+
+    def get_tracking_url(self):
+        """Возвращает URL для отслеживания на 1track.ru"""
+        if self.tracking_number:
+            return f"https://1track.ru/tracking/{self.tracking_number}"
+        return None
 
     class Meta:
         verbose_name = "Заказ"

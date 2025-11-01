@@ -19,6 +19,8 @@ admin.site.register(User, CustomUserAdmin)
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'total', 'created_at']
-    readonly_fields = ['items']
-    list_filter = ['user', 'created_at']
+    list_display = ['id', 'user', 'total', 'status', 'tracking_number', 'created_at']
+    list_editable = ['status', 'tracking_number']  # можно менять прямо в списке
+    list_filter = ['status', 'created_at', 'user']
+    readonly_fields = ['items', 'created_at']
+    search_fields = ['user__username', 'tracking_number']

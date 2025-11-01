@@ -15,7 +15,16 @@
     </div>
 
     <div class="content-wrapper">
-        <header><h1>NEXUS SPORT</h1></header>
+        <header><h1>NEXUS SPORT</h1> 
+        <!-- Переключатель темы -->
+    <div class="theme-toggle" id="themeToggle">
+        <span>🌙</span>
+        <div class="toggle-slider">
+            <div class="toggle-knob"></div>
+        </div>
+        <span>☀️</span>
+    </div>
+        </header>
 
         <nav>
             <a href="/">Главная</a>
@@ -69,6 +78,22 @@
                 }
             }
         });
+                document.addEventListener('DOMContentLoaded', () => {
+                    const toggle = document.getElementById('themeToggle');
+                    const body = document.body;
+
+                    // Проверяем сохранённую тему
+                    if (localStorage.getItem('theme') === 'light') {
+                        body.classList.add('light-theme');
+                    }
+
+                    // Переключение
+                    toggle.addEventListener('click', () => {
+                        body.classList.toggle('light-theme');
+                        const isLight = body.classList.contains('light-theme');
+                        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                    });
+                });
     </script>
 </body>
 </html>
