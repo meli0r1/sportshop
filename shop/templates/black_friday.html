@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Чёрная пятница — NEXUS SPORT{% endblock %}
+
+{% block content %}
+    <header class="bf-header">
+        <h1>🔥 ЧЁРНАЯ ПЯТНИЦА</h1>
+        <p style="font-size:1.2em;color:var(--accent-1);">Скидки до 20% на остатки!</p>
+        
+        {% if is_active %}
+            <div id="countdown" style="margin-top:15px;font-size:1.3em;font-weight:bold;"></div>
+        {% else %}
+            <p>Распродажа завершена. Следите за новостями!</p>
+        {% endif %}
+    </header>
+
+    {% if products %}
+        <div class="product-grid">
+            {% for product in products %}
+                <div class="product-card">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="placeholder-img">Нет фото</div>
+                    {% endif %}
+                    <h3>{{ product.name }}</h3>
+                    
+                    <!-- Скидка -->
+                    {% with discount_info=product.get_discount_info %}
+                        {% if discount_info.0 > 0 %}
+                            <p style="color:#aaa;text-decoration:line-through;">{{ product.price }} ₽</p>
+                            <p class="price">{{ discount_info.1 }} ₽</p>
+                            <p style="color:var(--accent-2);font-weight:bold;">-{{ discount_info.0 }}%!</p>
+                        {% endif %}
+                    {% endwith %}
+
+                    <p style="color: {% if product.stock <= 3 %}#ff5252{% else %}#66bb6a{% endif %};">
+                        Осталось: {{ product.stock }} шт.
+                    </p>
+
+                    <a href="{% url 'product_detail' product.id %}" class="btn">Подробнее</a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Нет товаров со скидками.</p>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Таймер обратного отсчёта
+    {% if is_active and bf_end %}
+        const countdownElement = document.getElementById('countdown');
+        if (countdownElement) {
+            const endTime = new Date('{{ bf_end|date:"c" }}').getTime();
+            const timer = setInterval(() => {
+                const now = new Date().getTime();
+                const diff = endTime - now;
+                if (diff < 0) {
+                    clearInterval(timer);
+                    countdownElement.innerHTML = 'Распродажа окончена!';
+                    return;
+                }
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                countdownElement.innerHTML = `До конца распродажи: ${days}д ${hours}ч ${minutes}м`;
+            }, 60000); // обновляем каждую минуту
+        }
+    {% endif %}
+</script>
+{% endblock %}

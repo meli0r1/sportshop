@@ -22,4 +22,6 @@ urlpatterns = [
     path('cabinet/', views.personal_cabinet, name='cabinet'),
     path('cabinet/edit/', views.edit_profile, name='edit_profile'),
     path('checkout/', views.checkout_page, name='checkout_page'),
+
+    path('black-friday/', views.black_friday_page, name='black_friday'),
 ]

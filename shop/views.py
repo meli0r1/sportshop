@@ -8,6 +8,8 @@ from django.utils.crypto import get_random_string
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from .models import Product, Profile, Order
+from django.utils import timezone
+from datetime import datetime, timedelta
 
 # Главные страницы
 def index_page(request):
@@ -271,4 +273,20 @@ def checkout_page(request):
         'profile': profile,
         'cart_items': cart_items,
         'total': round(total, 2)
+    })
+
+def black_friday_page(request):
+    # Получаем товары со скидками (остаток <= 5 и > 0)
+    discounted_products = Product.objects.filter(stock__gt=0, stock__lte=5)
+    
+    # Пример: Чёрная пятница длится 3 дня с 29 ноября
+    now = timezone.now()
+    bf_start = datetime(2025, 11, 29, 0, 0, tzinfo=timezone.utc)
+    bf_end = bf_start + timedelta(days=3)
+    is_active = bf_start <= now <= bf_end
+
+    return render(request, 'black_friday.html', {
+        'products': discounted_products,
+        'is_active': is_active,
+        'bf_end': bf_end,
     })
