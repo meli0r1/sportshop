@@ -30,23 +30,18 @@
             <!-- Остаток -->
             <p style="margin:15px 0;">
                 {% if product.stock > 0 %}
-                    <span style="color: {% if product.stock <= 3 %}#ff5252{% elif product.stock <= 5 %}#ff9800{% else %}#66bb6a{% endif %}; font-weight:bold;">
+                    <span style="color: {% if product.stock <= 3 %}#ff5252{% else %}#66bb6a{% endif %}; font-weight:bold;">
                         В наличии: {{ product.stock }} шт.
                     </span>
-                    {% if product.get_discount_info.0 > 0 %}
-                        <span style="color:var(--neon-pink); margin-left:10px;">
-                            🔥 Скидка {{ product.get_discount_info.0 }}%!
-                        </span>
-                    {% endif %}
                 {% else %}
                     <span style="color:#ff5252;font-weight:bold;">Нет в наличии</span>
                 {% endif %}
             </p>
-            
+
             <p>{{ product.description|default:"Описание отсутствует." }}</p>
 
-            <!-- Форма добавления с выбором количества -->
             {% if product.stock > 0 %}
+                <!-- Форма добавления -->
                 <form method="post" action="{% url 'add_to_cart' product.id %}" style="margin-top:20px;">
                     {% csrf_token %}
                     <div style="display:flex;align-items:center;gap:15px;margin:15px 0;">
@@ -59,6 +54,18 @@
                         Добавить в корзину
                     </button>
                 </form>
+            {% else %}
+                <!-- Кнопка "Сообщить о поступлении" -->
+                {% if user.is_authenticated %}
+                    <form method="post" style="margin-top:20px;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn" style="color:var(--accent-1);border-color:var(--accent-1);">
+                            Сообщить о поступлении
+                        </button>
+                    </form>
+                {% else %}
+                    <p style="color:#aaa;">Войдите, чтобы подписаться на уведомление.</p>
+                {% endif %}
             {% endif %}
 
             <a href="{% url 'catalog' %}" class="btn" style="margin-top:15px;display:inline-block;">← Назад</a>

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Привязать Telegram</h1>
+    <p>Отправьте боту <strong>@nexus_sport_bot</strong> команду:</p>
+    <code>/start {{ request.user.username }}</code>
+    <p>После этого вы сможете восстанавливать пароль через Telegram.</p>
+    <a href="{% url 'cabinet' %}" class="btn">← Назад в ЛК</a>
+{% endblock %}

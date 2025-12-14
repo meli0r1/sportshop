@@ -11,6 +11,23 @@ class Product(models.Model):
     image = models.ImageField('Изображение', upload_to='products/', blank=True, null=True)
     stock = models.PositiveIntegerField('Остаток на складе')
 
+    def save(self, *args, **kwargs):
+        # Проверяем, изменился ли stock с 0 на >0
+        old_instance = None
+        if self.pk:  # если объект уже существует
+            old_instance = Product.objects.get(pk=self.pk)
+        
+        super().save(*args, **kwargs)
+
+        # Если остаток стал >0, а раньше был 0 — отправляем уведомления
+        if old_instance and old_instance.stock == 0 and self.stock > 0:
+            emails = StockNotification.objects.filter(product=self).values_list('email', flat=True)
+            for email in emails:
+                self.notify_of_stock(email)
+            # Удаляем уведомления, чтобы не слать снова
+            StockNotification.objects.filter(product=self).delete()
+
+
     def get_discount_info(self):
         """Скидка только на малые остатки"""
         stock = self.stock
@@ -26,6 +43,18 @@ class Product(models.Model):
             discount = 0  # 6 и больше — без скидки
         new_price = float(self.price) * (1 - discount / 100)
         return discount, round(new_price, 2)
+    
+    def notify_of_stock(self, user_email):
+        """Отправить уведомление о поступлении"""
+        from django.core.mail import send_mail
+        from django.conf import settings
+        send_mail(
+            'Товар снова в наличии!',
+            f'Здравствуйте! Товар "{self.name}" снова в наличии на складе. Заходите за покупками!',
+            settings.DEFAULT_FROM_EMAIL,
+            [user_email],
+            fail_silently=True,
+        )
 
     def __str__(self):
         return self.name
@@ -34,10 +63,25 @@ class Product(models.Model):
         verbose_name = 'Товар'
         verbose_name_plural = 'Товары'
 
+
+class StockNotification(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Товар")
+    email = models.EmailField("Email пользователя", max_length=254)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Когда подписался")
+
+    def __str__(self):
+        return f"{self.email} → {self.product.name}"
+
+    class Meta:
+        verbose_name = "Уведомление о поступлении"
+        verbose_name_plural = "Уведомления о поступлении"
+        unique_together = ('product', 'email')
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField("Телефон", max_length=20, blank=True)
     address = models.TextField("Адрес доставки", blank=True)
+    telegram_id = models.CharField("Telegram ID", max_length=50, blank=True, null=True)
 
     def __str__(self):
         return f"Профиль {self.user.username}"

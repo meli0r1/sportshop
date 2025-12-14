@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
-from .models import Product, Profile, Order
+from .models import Product, Profile, Order, StockNotification
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -24,3 +24,9 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = ['status', 'created_at', 'user']
     readonly_fields = ['items', 'created_at']
     search_fields = ['user__username', 'tracking_number']
+
+@admin.register(StockNotification)
+class StockNotificationAdmin(admin.ModelAdmin):
+    list_display = ['email', 'product', 'created_at']
+    list_filter = ['product', 'created_at']
+    search_fields = ['email', 'product__name']

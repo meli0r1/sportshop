@@ -72,9 +72,13 @@ WSGI_APPLICATION = "sportshop.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'sportshop',
+        'USER': 'meli0r',           # ← замени на твой логин (вывод whoami)
+        'PASSWORD': '',            # ← оставь пустым (по умолчанию без пароля)
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -116,9 +120,14 @@ USE_TZ = True
 # Auth
 LOGIN_REDIRECT_URL = '/cabinet/'
 LOGOUT_REDIRECT_URL = '/'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'nosoa2015@yandex.ru'  # ← замени на свою почту
+EMAIL_HOST_PASSWORD = 'rursiaqjrubskzjj'  # ← замени на пароль приложения
+DEFAULT_FROM_EMAIL = 'nosoa2015@yandex.ru'

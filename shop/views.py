@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Product, Profile, Order
 from django.utils import timezone
 from datetime import datetime, timedelta
+from .models import Product, StockNotification
 
 # Главные страницы
 def index_page(request):
@@ -25,6 +26,18 @@ def catalog_page(request):
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+
+    # Обработка запроса на уведомление
+    if request.method == 'POST' and request.user.is_authenticated:
+        if product.stock <= 0:
+            email = request.user.email
+            if not StockNotification.objects.filter(product=product, email=email).exists():
+                StockNotification.objects.create(product=product, email=email)
+                messages.success(request, 'Вы будете уведомлены, когда товар поступит.')
+            else:
+                messages.info(request, 'Вы уже подписаны на уведомление.')
+            return redirect('product_detail', product_id=product_id)
+
     return render(request, 'product.html', {'product': product})
 
 # Корзина (в сессии)
@@ -274,6 +287,65 @@ def checkout_page(request):
         'cart_items': cart_items,
         'total': round(total, 2)
     })
+
+def password_reset_code_request(request):
+    if request.method == 'POST':
+        identifier = request.POST.get('identifier')  # логин или email
+        try:
+            user = User.objects.get(username=identifier)
+        except User.DoesNotExist:
+            try:
+                user = User.objects.get(email=identifier)
+            except User.DoesNotExist:
+                messages.error(request, 'Пользователь с таким логином или email не найден.')
+                return render(request, 'password_reset_request.html')
+
+        # Генерируем код
+        code = get_random_string(6, '0123456789')
+        request.session['password_reset_code'] = code
+        request.session['password_reset_user_id'] = user.id
+
+        # Отправляем код на email
+        try:
+            send_mail(
+                'Код для смены пароля — NEXUS SPORT',
+                f'Ваш код подтверждения: {code}',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            messages.success(request, 'Код подтверждения отправлен на ваш email.')
+            return redirect('password_reset_code_verify')
+        except Exception:
+            messages.error(request, 'Не удалось отправить письмо. Попробуйте позже.')
+            return render(request, 'password_reset_request.html')
+
+    return render(request, 'password_reset_request.html')
+
+def password_reset_code_verify(request):
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        password = request.POST.get('password')
+        password2 = request.POST.get('password2')
+
+        if password != password2:
+            messages.error(request, 'Пароли не совпадают.')
+            return render(request, 'password_reset_verify.html')
+
+        if code == request.session.get('password_reset_code'):
+            user_id = request.session.get('password_reset_user_id')
+            user = User.objects.get(id=user_id)
+            user.set_password(password)
+            user.save()
+            messages.success(request, 'Пароль успешно изменён. Войдите с новым паролем.')
+            # Очищаем сессию
+            del request.session['password_reset_code']
+            del request.session['password_reset_user_id']
+            return redirect('login')
+        else:
+            messages.error(request, 'Неверный код подтверждения.')
+
+    return render(request, 'password_reset_verify.html')
 
 def black_friday_page(request):
     # Получаем товары со скидками (остаток <= 5 и > 0)

@@ -24,4 +24,7 @@ urlpatterns = [
     path('checkout/', views.checkout_page, name='checkout_page'),
 
     path('black-friday/', views.black_friday_page, name='black_friday'),
+
+    path('password-reset-code/', views.password_reset_code_request, name='password_reset_code_request'),
+    path('password-reset-code/verify/', views.password_reset_code_verify, name='password_reset_code_verify'),
 ]
